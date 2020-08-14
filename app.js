@@ -3,7 +3,7 @@ let globalIndex;
 
 $(document).ready(function () {
   $(".context-menu").hide();
-  $(".col").height($( window ).height() - $('header').height() );
+  $(".col").height($(window).height() - $('header').height());
 
   function readSingleFile(e) {
     var file = e.target.files[0];
@@ -28,7 +28,7 @@ $(document).ready(function () {
   }
 
   document.getElementById('file-input').addEventListener('change', readSingleFile, false);
-  
+
   // disable right click and show custom context menu
   $("#span_detail").bind('contextmenu', function (e) {
     var top = e.pageY + 5;
@@ -91,6 +91,7 @@ function showdetail(index, tab = null, highlight = null) {
   globalIndex = index;
 
   let entry = jsonglob.log.entries[index];
+  console.log(entry);
   $("#span_detail").html(`<ul id="tabs">
       <li><a id="tab1">Request</a></li>
       <li><a id="tab2">Response</a></li>
@@ -99,6 +100,9 @@ function showdetail(index, tab = null, highlight = null) {
       <li><a id="tab5">Timing</a></li>
   </ul>
   <div class="container" id="tab1C">
+    <h3>Start date time</h3>
+    ` + entry.startedDateTime + `
+  
     <h3>Url</h3>
     ` + entry.request.url + ` 
     
@@ -106,12 +110,27 @@ function showdetail(index, tab = null, highlight = null) {
     ` + entry.request.method + ` 
     
     <h3>Headers</h3>
+    <pre>
+    ` + getNameValue(entry.request.headers) + `
+    </pre>
     
     <h3>Querystring</h3>
+    <pre>
+    ` + getNameValue(entry.request.queryString) + `
+    </pre>  
     
     <h3>Post data</h3>
     <pre>` + getPostDataOr(entry) + `</pre></div>
-  <div class="container" id="tab2C">2Some content</div>
+  <div class="container" id="tab2C">
+    <h3>Status</h3>
+    ` + entry.response.status + `
+    
+    <h3>Headers</h3>
+    <pre>
+    ` + getNameValue(entry.response.headers) + `
+    </pre>    
+
+</div>
   <div class="container" id="tab3C"><pre>` + getResponseContent(entry) + `</pre></div>
   <div class="container" id="tab4C">4Some content</div>
   <div class="container" id="tab5C">5Some content</div>`
@@ -141,6 +160,16 @@ function getPostDataOr(entry) {
   } else {
     return JSON.stringify(JSON.parse(entry.request.postData.text), null, 2);
   }
+}
+
+function getNameValue(datas) {
+  let builder = '';
+  // if (datas) {
+  datas.forEach(data => {
+    builder = builder.concat('<strong>' + data.name + ':</strong> ' + data.value + '\n');
+  });
+  // }
+  return builder
 }
 
 function getResponseContent(entry) {
