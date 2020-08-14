@@ -28,7 +28,7 @@ $(document).ready(function () {
   }
 
   document.getElementById('file-input').addEventListener('change', readSingleFile, false);
-  s
+  
   // disable right click and show custom context menu
   $("#span_detail").bind('contextmenu', function (e) {
     var top = e.pageY + 5;
