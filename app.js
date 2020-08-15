@@ -1,5 +1,7 @@
 let jsonglob;
 let globalIndex;
+let global_entries;
+let filtered_entries;
 
 $(document).ready(function () {
   $(".context-menu").hide();
@@ -14,22 +16,38 @@ $(document).ready(function () {
     reader.onload = function (e) {
       var contents = e.target.result;
       // Display file content
-      displayContents(contents);
+      global_entries = JSON.parse(contents).log.entries;
+      filtered_entries = global_entries;
+      displayContents(global_entries);
     };
     reader.readAsText(file);
   }
 
-  function displayContents(contents) {
-    jsonglob = JSON.parse(contents);
+  function displayContents(data) {
     $("#span_result").empty();
-    jsonglob.log.entries.forEach((el, i) => {
-      $("#span_result").append('<p class="status' + el.response.status + '"><a onclick="showdetail(' + i + '); $(\'p > a\').removeClass(\'selected\'); $(this).addClass(\'selected\');"><span class="badge badge-secondary">' + el.request.method + '</span> ' + el.request.url + '</a></p>');
+    data.forEach((el, i) => {
+      $("#span_result").append('<p class="status' + el.response.status + '"><a onclick="showdetail(' + i + '); $(\'p > a\').removeClass(\'selected\'); $(this).addClass(\'selected\');">' + i + ' <span class="badge badge-secondary">' + el.request.method + '</span> ' + el.request.url + '</a></p>');
     });
   }
 
   document.getElementById('file-input').addEventListener('change', readSingleFile, false);
 
-  // disable right click and show custom context menu
+  $("#exclude-filter").change(function () {
+    let filters = $(this).val();
+
+    filtered_entries = global_entries.filter(function (item) {
+      let result = true;
+      filters.split(',').forEach(filter => {
+        if (result !== false) {
+          result = !item.request.url.endsWith(filter);
+        }
+      });
+      return result;
+    });
+    displayContents(filtered_entries);
+  });
+
+// disable right click and show custom context menu
   $("#span_detail").bind('contextmenu', function (e) {
     var top = e.pageY + 5;
     var left = e.pageX;
@@ -56,25 +74,26 @@ $(document).ready(function () {
     return false;
   });
 
-  // Hide context menu
+// Hide context menu
   $(document).bind('contextmenu click', function () {
     $(".context-menu").hide();
   });
 
-  // disable context-menu from custom menu
+// disable context-menu from custom menu
   $('.context-menu').bind('contextmenu', function () {
     return false;
   });
 
-  // // Clicked context-menu item
-  // $('.context-menu li').click(function () {
-  //   var className = $(this).find("span:nth-child(1)").attr("class");
-  //   var titleid = $('#txt_id').val();
-  //   $("#" + titleid).css("background-color", className);
-  //   $(".context-menu").hide();
-  // });
+// // Clicked context-menu item
+// $('.context-menu li').click(function () {
+//   var className = $(this).find("span:nth-child(1)").attr("class");
+//   var titleid = $('#txt_id').val();
+//   $("#" + titleid).css("background-color", className);
+//   $(".context-menu").hide();
+// });
 
-});
+})
+;
 
 $(document).on("click", "#tabs li a", function () {
   var t = $(this).attr('id');
@@ -89,8 +108,9 @@ $(document).on("click", "#tabs li a", function () {
 
 function showdetail(index, tab = null, highlight = null) {
   globalIndex = index;
+  console.log(global_entries);
 
-  let entry = jsonglob.log.entries[index];
+  let entry = filtered_entries[index];
   console.log(entry);
   $("#span_detail").html(`<ul id="tabs">
       <li><a id="tab1">Request</a></li>
@@ -203,7 +223,7 @@ function findInPreviousResponses(needle) {
 
   let result = [];
   for (let i = 0; i < globalIndex; i++) {
-    let entry = jsonglob.log.entries[i];
+    let entry = filtered_entries[i];
     if (entry.response.content.text && entry.response.content.text.includes(needle)) {
       let valueToPush = {};
       valueToPush.index = i;
