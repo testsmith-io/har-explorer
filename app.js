@@ -4,115 +4,137 @@ let global_entries;
 let filtered_entries;
 
 $(document).ready(function () {
-  $(".context-menu").hide();
-  $(".col").height($(window).height() - $('header').height());
+    let fileName = localStorage.getItem('FILE_NAME');
+    let fileContent = localStorage.getItem('FILE_CONTENT');
+    let includeFilter = localStorage.getItem('INCLUDE_FILTER');
+    let excludeFilter = localStorage.getItem('EXCLUDE_FILTER');
+    $('.context-menu').hide();
+    $('.col').height($(window).height() - $('header').height());
 
-  function readSingleFile(e) {
-    var file = e.target.files[0];
-    if (!file) {
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      var contents = e.target.result;
-      // Display file content
-      global_entries = JSON.parse(contents).log.entries;
-      filtered_entries = global_entries;
-      displayContents(global_entries);
-    };
-    reader.readAsText(file);
-  }
-
-  function displayContents(data) {
-    $("#span_result").empty();
-    data.forEach((el, i) => {
-      $("#span_result").append('<p class="status' + el.response.status + '"><a onclick="showdetail(' + i + '); $(\'p > a\').removeClass(\'selected\'); $(this).addClass(\'selected\');">' + i + ' <span class="badge badge-secondary">' + el.request.method + '</span> ' + el.request.url + '</a></p>');
-    });
-  }
-
-  document.getElementById('file-input').addEventListener('change', readSingleFile, false);
-
-  $("#exclude-filter").change(function () {
-    let filters = $(this).val();
-
-    filtered_entries = global_entries.filter(function (item) {
-      let result = true;
-      filters.split(',').forEach(filter => {
-        if (result !== false) {
-          result = !item.request.url.endsWith(filter);
+    function readSingleFile(e) {
+        const file = e.target.files[0];
+        localStorage.setItem('FILE_NAME', file.name);
+        if (!file) {
+            return;
         }
-      });
-      return result;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const contents = e.target.result;
+            // Display file content
+            global_entries = JSON.parse(contents).log.entries;
+            filtered_entries = global_entries;
+            localStorage.setItem('FILE_CONTENT', JSON.stringify(global_entries));
+            displayContents(global_entries);
+        };
+        reader.readAsText(file);
+    }
+
+    function displayContents(data) {
+        $('#span_result').empty();
+        data.forEach((el, i) => {
+            $('#span_result').append('<p class="status' + el.response.status + '"><a onclick="showdetail(' + i + '); $(\'p > a\').removeClass(\'selected\'); $(this).addClass(\'selected\');">' + i + ' <span class="badge badge-secondary">' + el.request.method + '</span> ' + el.request.url + '</a></p>');
+        });
+    }
+
+    document.getElementById('file-input').addEventListener('change', readSingleFile, false);
+
+    if (fileName) {
+        global_entries = JSON.parse(fileContent);
+        filtered_entries = global_entries;
+        displayContents(global_entries);
+    }
+
+    if (includeFilter) {
+        $('#include-filter').val(includeFilter);
+        filterBasedOnIncludePattern(includeFilter);
+    }
+
+    if (excludeFilter) {
+        $('#exclude-filter').val(excludeFilter);
+        filterBasedOnExcludePattern(excludeFilter);
+    }
+
+    $('#include-filter').change(function () {
+        let filters = $(this).val();
+        localStorage.setItem('INCLUDE_FILTER', filters);
+        filterBasedOnIncludePattern(filters);
     });
-    displayContents(filtered_entries);
-  });
 
-// disable right click and show custom context menu
-  $("#span_detail").bind('contextmenu', function (e) {
-    var top = e.pageY + 5;
-    var left = e.pageX;
-
-    console.log(globalIndex);
-    console.log(getSelectionText());
-
-    $('.context-menu > ul').empty();
-
-    findInPreviousResponses(getSelectionText()).forEach(data => {
-      console.log(data);
-      let url = data.entry.request.url;
-      let method = data.entry.request.method;
-      $('.context-menu > ul').append('<li><a onclick="showdetail(' + data.index + ', \'tab3\', \'' + getSelectionText() + '\');">' + data.index + ' ' + method + ' ' + url.substring(url.lastIndexOf('/') + 1) + '</a></li>');
+    $('#exclude-filter').change(function () {
+        let filters = $(this).val();
+        localStorage.setItem('EXCLUDE_FILTER', filters);
+        filterBasedOnExcludePattern(filters)
     });
 
-    // Show contextmenu
-    $(".context-menu").toggle(100).css({
-      top: top + "px",
-      left: left + "px"
+    function filterBasedOnIncludePattern(filters) {
+        filtered_entries = global_entries.filter(function (item) {
+            let result = true;
+            filters.split(',').forEach(filter => {
+                if (result !== false) {
+                    result = item.request.url.endsWith(filter);
+                }
+            });
+            return result;
+        });
+        displayContents(filtered_entries);
+    }
+
+    function filterBasedOnExcludePattern(filters) {
+        filtered_entries = global_entries.filter(function (item) {
+            let result = true;
+            filters.split(',').forEach(filter => {
+                if (result !== false) {
+                    result = !item.request.url.endsWith(filter);
+                }
+            });
+            return result;
+        });
+        displayContents(filtered_entries);
+    }
+
+    $('#span_detail').bind('contextmenu', function (e) {
+        const top = e.pageY + 5;
+        const left = e.pageX;
+
+        $('.context-menu > ul').empty();
+
+        findInPreviousResponses(getSelectionText()).forEach(data => {
+            let url = data.entry.request.url;
+            let method = data.entry.request.method;
+            $('.context-menu > ul').append('<li><a onclick="showdetail(' + data.index + ', \'tab3\', \'' + getSelectionText() + '\');">' + data.index + ' ' + method + ' ' + url.substring(url.lastIndexOf('/') + 1) + '</a></li>');
+        });
+
+        $('.context-menu').toggle(100).css({
+            top: top + 'px', left: left + 'px'
+        });
+        return false;
     });
 
-    // disable default context menu
-    return false;
-  });
+    $(document).bind('contextmenu click', function () {
+        $('.context-menu').hide();
+    });
 
-// Hide context menu
-  $(document).bind('contextmenu click', function () {
-    $(".context-menu").hide();
-  });
+    $('.context-menu').bind('contextmenu', function () {
+        return false;
+    });
 
-// disable context-menu from custom menu
-  $('.context-menu').bind('contextmenu', function () {
-    return false;
-  });
+});
 
-// // Clicked context-menu item
-// $('.context-menu li').click(function () {
-//   var className = $(this).find("span:nth-child(1)").attr("class");
-//   var titleid = $('#txt_id').val();
-//   $("#" + titleid).css("background-color", className);
-//   $(".context-menu").hide();
-// });
+$(document).on('click', '#tabs li a', function () {
+    const t = $(this).attr('id');
+    if ($(this).hasClass('inactive')) { //this is the start of our condition
+        $('#tabs li a').addClass('inactive');
+        $(this).removeClass('inactive');
 
-})
-;
-
-$(document).on("click", "#tabs li a", function () {
-  var t = $(this).attr('id');
-  if ($(this).hasClass('inactive')) { //this is the start of our condition
-    $('#tabs li a').addClass('inactive');
-    $(this).removeClass('inactive');
-
-    $('.container').hide();
-    $('#' + t + 'C').fadeIn('slow');
-  }
+        $('.container').hide();
+        $('#' + t + 'C').fadeIn('slow');
+    }
 });
 
 function showdetail(index, tab = null, highlight = null) {
-  globalIndex = index;
-  console.log(global_entries);
-
-  let entry = filtered_entries[index];
-  console.log(entry);
-  $("#span_detail").html(`<ul id="tabs">
+    globalIndex = index;
+    let entry = filtered_entries[index];
+    $('#span_detail').html(`<ul id="tabs">
       <li><a id="tab1">Request</a></li>
       <li><a id="tab2">Response</a></li>
       <li><a id="tab3">Response Content</a></li>
@@ -122,115 +144,104 @@ function showdetail(index, tab = null, highlight = null) {
   <div class="container" id="tab1C">
     <h3>Start date time</h3>
     ` + entry.startedDateTime + `
-  
     <h3>Url</h3>
     ` + entry.request.url + ` 
-    
     <h3>Method</h3>
     ` + entry.request.method + ` 
-    
     <h3>Headers</h3>
     <pre>
     ` + getNameValue(entry.request.headers) + `
     </pre>
-    
     <h3>Querystring</h3>
     <pre>
     ` + getNameValue(entry.request.queryString) + `
     </pre>  
-    
     <h3>Post data</h3>
     <pre>` + getPostDataOr(entry) + `</pre></div>
   <div class="container" id="tab2C">
     <h3>Status</h3>
     ` + entry.response.status + `
-    
     <h3>Headers</h3>
     <pre>
     ` + getNameValue(entry.response.headers) + `
     </pre>    
-
 </div>
   <div class="container" id="tab3C"><pre>` + getResponseContent(entry) + `</pre></div>
   <div class="container" id="tab4C">4Some content</div>
-  <div class="container" id="tab5C">5Some content</div>`
-  );
+  <div class="container" id="tab5C">5Some content</div>`);
 
-  if (tab) {
-    $('#tabs li a').addClass('inactive');
-    $('#tabs li a#' + tab).removeClass('inactive');
-    $('.container').hide();
-    $('#' + tab + 'C').fadeIn('slow');
-  } else {
-    $('#tabs li a:not(:first)').addClass('inactive');
-    $('.container').hide();
-    $('.container:first').show();
-  }
+    if (tab) {
+        $('#tabs li a').addClass('inactive');
+        $('#tabs li a#' + tab).removeClass('inactive');
+        $('.container').hide();
+        $('#' + tab + 'C').fadeIn('slow');
+    } else {
+        $('#tabs li a:not(:first)').addClass('inactive');
+        $('.container').hide();
+        $('.container:first').show();
+    }
 
-  if (highlight) {
-    let t = $('#' + tab + 'C').html();
-    t = t.replace(highlight, "<span class='highlight'>" + highlight + "</span>");
-    $('#' + tab + 'C').html(t);
-  }
+    if (highlight) {
+        let t = $('#' + tab + 'C').html();
+        t = t.replace(highlight, "<span class='highlight'>" + highlight + "</span>");
+        $('#' + tab + 'C').html(t);
+    }
 }
 
 function getPostDataOr(entry) {
-  if (entry.request.method === 'GET' || entry.request.method === 'OPTIONS') {
-    return '';
-  } else {
-    return JSON.stringify(JSON.parse(entry.request.postData.text), null, 2);
-  }
+    if (entry.request.method === 'GET' || entry.request.method === 'OPTIONS') {
+        return '';
+    } else {
+        return JSON.stringify(JSON.parse(entry.request.postData.text), null, 2);
+    }
 }
 
 function getNameValue(datas) {
-  let builder = '';
-  // if (datas) {
-  datas.forEach(data => {
-    builder = builder.concat('<strong>' + data.name + ':</strong> ' + data.value + '\n');
-  });
-  // }
-  return builder
+    let builder = '';
+    datas.forEach(data => {
+        builder = builder.concat('<strong>' + data.name + ':</strong> ' + data.value + '\n');
+    });
+    return builder
 }
 
 function getResponseContent(entry) {
-  switch (entry.response.content.mimeType) {
-    case 'image/svg+xml':
-      return 'Image';
-      break;
-    case 'application/json':
-      if (entry.response.content.text) {
-        return JSON.stringify(JSON.parse(entry.response.content.text), null, 2);
-      } else {
-        return '';
-      }
-      break;
-    case 'text/html':
-      return entry.response.content.text;
-  }
+    switch (entry.response.content.mimeType) {
+        case 'image/svg+xml':
+            return 'Image';
+            break;
+        case 'application/json; charset=utf-8':
+        case 'application/json':
+            if (entry.response.content.text) {
+                return JSON.stringify(JSON.parse(entry.response.content.text), null, 2);
+            } else {
+                return '';
+            }
+            break;
+        case 'text/html':
+            return entry.response.content.text;
+    }
 }
 
 function getSelectionText() {
-  var text = "";
-  if (window.getSelection) {
-    text = window.getSelection().toString();
-  } else if (document.selection && document.selection.type !== "Control") {
-    text = document.selection.createRange().text;
-  }
-  return text;
+    let text = "";
+    if (window.getSelection) {
+        text = window.getSelection().toString();
+    } else if (document.selection && document.selection.type !== "Control") {
+        text = document.selection.createRange().text;
+    }
+    return text;
 }
 
 function findInPreviousResponses(needle) {
-
-  let result = [];
-  for (let i = 0; i < globalIndex; i++) {
-    let entry = filtered_entries[i];
-    if (entry.response.content.text && entry.response.content.text.includes(needle)) {
-      let valueToPush = {};
-      valueToPush.index = i;
-      valueToPush.entry = entry;
-      result.push(valueToPush);
+    let result = [];
+    for (let i = 0; i < globalIndex; i++) {
+        let entry = filtered_entries[i];
+        if (entry.response.content.text && entry.response.content.text.includes(needle)) {
+            let valueToPush = {};
+            valueToPush.index = i;
+            valueToPush.entry = entry;
+            result.push(valueToPush);
+        }
     }
-  }
-  console.log(result);
-  return result;
+    return result;
 }
