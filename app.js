@@ -23,7 +23,11 @@ $(document).ready(function () {
             // Display file content
             global_entries = JSON.parse(contents).log.entries;
             filtered_entries = global_entries;
-            localStorage.setItem('FILE_CONTENT', JSON.stringify(global_entries));
+            try {
+                localStorage.setItem('FILE_CONTENT', JSON.stringify(global_entries));
+            } catch (e) {
+                console.log('dom exception')
+            }
             displayContents(global_entries);
         };
         reader.readAsText(file);
