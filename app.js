@@ -224,7 +224,7 @@ function getResponseContent(entry) {
             break;
         case 'application/xml':
         case 'text/html':
-            return entry.response.content.text;
+            return entry.response.content.text.replace(/\</g,"&lt;").replace(/\>/g,"&gt;");
     }
 }
 
