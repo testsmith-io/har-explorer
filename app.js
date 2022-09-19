@@ -209,6 +209,7 @@ function getNameValue(datas) {
 }
 
 function getResponseContent(entry) {
+    console.log(entry.response.content.mimeType)
     switch (entry.response.content.mimeType) {
         case 'image/svg+xml':
             return 'Image';
