@@ -224,7 +224,7 @@ function getResponseContent(entry) {
             break;
         case 'application/xml':
         case 'text/html':
-            return '<![CDATA['.entry.response.content.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').']]';
+            return entry.response.content.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 }
 
