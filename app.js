@@ -222,7 +222,7 @@ function getResponseContent(entry) {
                 return '';
             }
             break;
-        // case 'application/xml':
+        case 'application/xml':
         case 'text/html':
             return entry.response.content.text;//.replaceAll('<',"&lt;").replaceAll('>',"&gt;\n");
     }
