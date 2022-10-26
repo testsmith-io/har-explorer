@@ -24,7 +24,7 @@
             position: absolute;
             border: 1px solid black;
             border-radius: 3px;
-            width: 200px;
+            width: 400px;
             background: white;
             box-shadow: 10px 10px 5px #888888;
         }
@@ -141,8 +141,9 @@
 <header>
     <div class="m-3">
         <h1>HAR explorer</h1><input type="file" id="file-input"><br>
-        Exclude filter (URL's ending with): <input type="text" id="exclude-filter"> (comma-separated)<br>
-        Include filter (URL's ending with): <input type="text" id="include-filter"> (comma-separated)<br>
+        Exclude filter (URL's contain): <input type="text" id="exclude-filter"> (comma-separated)<br>
+        Include filter (URL's contain): <input type="text" id="include-filter"> (comma-separated)<br>
+        <label><input type="checkbox" id="isMendix">Mendix?</label><br>
     </div>
 </header>
 

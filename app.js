@@ -2,12 +2,15 @@ let jsonglob;
 let globalIndex;
 let global_entries;
 let filtered_entries;
+let isMendix;
 
 $(document).ready(function () {
     let fileName = localStorage.getItem('FILE_NAME');
     let fileContent = localStorage.getItem('FILE_CONTENT');
     let includeFilter = localStorage.getItem('INCLUDE_FILTER');
     let excludeFilter = localStorage.getItem('EXCLUDE_FILTER');
+
+
     $('.context-menu').hide();
     $('.col').height($(window).height() - $('header').height());
 
@@ -58,6 +61,11 @@ $(document).ready(function () {
         filterBasedOnExcludePattern(excludeFilter);
     }
 
+    $('#isMendix').change(function () {
+        isMendix = this.checked;
+        console.log(isMendix)
+    });
+
     $('#include-filter').change(function () {
         let filters = $(this).val();
         localStorage.setItem('INCLUDE_FILTER', filters);
@@ -72,26 +80,18 @@ $(document).ready(function () {
 
     function filterBasedOnIncludePattern(filters) {
         filtered_entries = global_entries.filter(function (item) {
-            let result = true;
-            filters.split(',').forEach(filter => {
-                if (result !== false) {
-                    result = item.request.url.endsWith(filter);
-                }
+            return filters.split(',').some(element => {
+                return item.request.url.includes(element);
             });
-            return result;
         });
         displayContents(filtered_entries);
     }
 
     function filterBasedOnExcludePattern(filters) {
         filtered_entries = global_entries.filter(function (item) {
-            let result = true;
-            filters.split(',').forEach(filter => {
-                if (result !== false) {
-                    result = !item.request.url.endsWith(filter);
-                }
+            return filters.split(',').some(element => {
+                return !item.request.url.includes(element);
             });
-            return result;
         });
         displayContents(filtered_entries);
     }
@@ -105,7 +105,7 @@ $(document).ready(function () {
         findInPreviousResponses(getSelectionText()).forEach(data => {
             let url = data.entry.request.url;
             let method = data.entry.request.method;
-            $('.context-menu > ul').append('<li><a onclick="showdetail(' + data.index + ', \'tab3\', \'' + getSelectionText() + '\');">' + data.index + ' ' + method + ' ' + url.substring(url.lastIndexOf('/') + 1) + '</a></li>');
+            $('.context-menu > ul').append('<li><a onclick="showdetail(' + data.index + ', \'tab3\', \'' + getSelectionText() + '\');">' + data.index + ' ' + method + ' ' + url.substring(url.lastIndexOf('/') + 1) + '</a>  (RegEx: ' + data.regex + ')</li>');
         });
 
         $('.context-menu').toggle(100).css({
@@ -114,9 +114,14 @@ $(document).ready(function () {
         return false;
     });
 
-    $(document).bind('contextmenu click', function () {
-        $('.context-menu').hide();
+    $(document).keyup(function (e) {
+        if (e.key === "Escape") { // escape key maps to keycode `27`
+            $('.context-menu').hide();
+        }
     });
+    // $(document).bind('contextmenu click', function () {
+    //     $('.context-menu').hide();
+    // });
 
     $('.context-menu').bind('contextmenu', function () {
         return false;
@@ -224,7 +229,7 @@ function getResponseContent(entry) {
             break;
         case 'application/xml':
         case 'text/html':
-            return entry.response.content.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return '<textarea style="height:50vh; width:100%;">' + entry.response.content.text + '</textarea>'.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 }
 
@@ -246,6 +251,13 @@ function findInPreviousResponses(needle) {
             let valueToPush = {};
             valueToPush.index = i;
             valueToPush.entry = entry;
+            if (isMendix && entry.request.url.includes('.xml')) {
+                let startPosition = entry.response.content.text.indexOf(needle);
+                let endPosition = startPosition + needle.length + 1;
+                let extractSnippet = entry.response.content.text.substring(startPosition - 50, endPosition);
+                valueToPush.regex = extractSnippet.replace(needle, '(.*?)').replaceAll("\"", "\\\"");
+            }
+
             result.push(valueToPush);
         }
     }
