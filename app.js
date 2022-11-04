@@ -48,7 +48,7 @@ $(document).ready(function () {
     if (fileName) {
         global_entries = JSON.parse(fileContent);
         filtered_entries = global_entries;
-        displayContents(global_entries);
+        // displayContents(filtered_entries);
     }
 
     if (includeFilter) {
