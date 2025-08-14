@@ -198,7 +198,7 @@ function showdetail(index, tab = null, highlight = null) {
 }
 
 function getPostDataOr(entry) {
-    if (entry.request.method === 'GET' || entry.request.method === 'OPTIONS') {
+    if (entry.request.method === 'GET' || entry.request.method === 'OPTIONS' || !entry.request.postData) {
         return '';
     } else {
         return JSON.stringify(JSON.parse(entry.request.postData.text), null, 2);
